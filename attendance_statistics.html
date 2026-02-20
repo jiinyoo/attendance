@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영중젊은이교회 출석 통계</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .period {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .large-chart {
+            height: 400px;
+        }
+
+        .member-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .member-item:hover {
+            background: #e9ecef;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .attendance-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
+
+        .dot.present {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        .dot.late {
+            background: #FF9800;
+            border-color: #FF9800;
+        }
+
+        .dot.absent {
+            background: transparent;
+        }
+
+        .dot.main-service {
+            background: #2196F3;
+            border-color: #2196F3;
+        }
+
+        .rate {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .newcomer-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .newcomer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .newcomer-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge.ready {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .badge.progress {
+            background: #FF9800;
+            color: white;
+        }
+
+        .badge.new {
+            background: #2196F3;
+            color: white;
+        }
+
+        .attendance-count {
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .summary-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .group-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+
+        .group-name {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .group-rate {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 영중젊은이교회 출석 통계</h1>
+            <p class="period">2025년 8월 24일 - 9월 14일 (4주간)</p>
+        </header>
+
+        <!-- 전체 요약 통계 -->
+        <div class="summary-stats">
+            <div class="summary-item">
+                <div class="summary-value">52</div>
+                <div class="summary-label">전체 등록 인원</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">73%</div>
+                <div class="summary-label">평균 출석률</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">8</div>
+                <div class="summary-label">속(그룹) 수</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">5</div>
+                <div class="summary-label">새신자</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <!-- 1. 개인별 출석률 -->
+            <div class="stat-card">
+                <h2>👥 개인별 출석률 (최근 4주)</h2>
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="dot present"></span>
+                        <span>정시 출석</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="dot late"></span>
+                        <span>지각</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="dot main-service"></span>
+                        <span>본당예배</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="dot absent"></span>
+                        <span>결석</span>
+                    </div>
+                </div>
+                <div class="member-list" id="memberAttendanceList"></div>
+            </div>
+
+            <!-- 2. 새신자 출석 현황 -->
+            <div class="stat-card">
+                <h2>🌟 새신자 출석 현황</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">
+                    * 3회 이상 출석 시 정식 등록 가능
+                </p>
+                <div id="newcomerList"></div>
+            </div>
+
+            <!-- 3. 속별 평균 출석률 -->
+            <div class="stat-card">
+                <h2>📈 속별 평균 출석률</h2>
+                <div class="chart-container">
+                    <canvas id="groupAttendanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 4. 주차별 전체 출석 추이 -->
+            <div class="stat-card">
+                <h2>📅 주차별 출석 인원 추이</h2>
+                <div class="chart-container">
+                    <canvas id="weeklyTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 5. 연령대별 출석률 -->
+            <div class="stat-card">
+                <h2>👶👨👴 연령대별 출석률</h2>
+                <div class="chart-container">
+                    <canvas id="ageGroupChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 6. 출석 상태 분포 -->
+            <div class="stat-card">
+                <h2>⏰ 출석 상태 분포</h2>
+                <div class="chart-container">
+                    <canvas id="attendanceStatusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 7. 연속 결석자 현황 -->
+            <div class="stat-card">
+                <h2>⚠️ 관심 필요 멤버 (2주 이상 결석)</h2>
+                <div id="absentMembersList"></div>
+            </div>
+
+            <!-- 8. 완전 출석자 -->
+            <div class="stat-card">
+                <h2>🏆 완전 출석자 (4주 모두 출석)</h2>
+                <div id="perfectAttendanceList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 실제 PDF 데이터 기반 샘플 데이터
+        const attendanceData = {
+            members: [
+                { name: '유동훈', birthYear: 1990, group: '동훈속', attendance: ['present', 'late', 'absent', 'present'] },
+                { name: '박태관', birthYear: 1991, group: '동훈속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '문승준', birthYear: 1993, group: '동훈속', attendance: ['present', 'absent', 'absent', 'absent'] },
+                { name: '이수정', birthYear: 1991, group: '수정속', attendance: ['absent', 'late', 'late', 'absent'] },
+                { name: '임현우', birthYear: 1982, group: '수정속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '유현지', birthYear: 1992, group: '수정속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '김현동', birthYear: 1993, group: '현동속', attendance: ['absent', 'present', 'absent', 'present'] },
+                { name: '박찬우', birthYear: 1983, group: '현동속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '김지혜', birthYear: 1988, group: '현동속', attendance: ['main', 'absent', 'absent', 'absent'] },
+                { name: '김율리', birthYear: 1993, group: '율리속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '김화중', birthYear: 1985, group: '율리속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '김현준', birthYear: 1988, group: '율리속', attendance: ['main', 'absent', 'absent', 'absent'] },
+                { name: '추영욱', birthYear: 1985, group: '율리속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '배현근', birthYear: 1990, group: '율리속', attendance: ['absent', 'absent', 'main', 'absent'] },
+                { name: '강재곤', birthYear: 1989, group: '율리속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '차영준', birthYear: 1995, group: '영준속', attendance: ['present', 'present', 'present', 'present'] },
+                { name: '류성현', birthYear: 1992, group: '영준속', attendance: ['present', 'late', 'present', 'present'] },
+                { name: '박수연', birthYear: 1993, group: '영준속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '김현정', birthYear: 1995, group: '현정속', attendance: ['present', 'present', 'late', 'present'] },
+                { name: '박소영', birthYear: 1998, group: '현정속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '문승운', birthYear: 1991, group: '현정속', attendance: ['present', 'absent', 'absent', 'absent'] },
+                { name: '고정환', birthYear: 1998, group: '정환속', attendance: ['present', 'present', 'present', 'late'] },
+                { name: '조유진', birthYear: 1993, group: '정환속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '김의현', birthYear: 1998, group: '정환속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '박하영', birthYear: 1998, group: '하영속', attendance: ['present', 'late', 'present', 'present'] },
+                { name: '김운민혁', birthYear: 2001, group: '하영속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+                { name: '이현민', birthYear: 2005, group: '하영속', attendance: ['absent', 'absent', 'absent', 'absent'] },
+            ],
+            newcomers: [
+                { name: '김민경', birthYear: 1997, visitCount: 3, status: 'ready' },
+                { name: '진솔', birthYear: 1997, visitCount: 2, status: 'progress' },
+                { name: '심하림', birthYear: 1997, visitCount: 4, status: 'ready' },
+                { name: '이우용', birthYear: 1998, visitCount: 1, status: 'new' },
+                { name: '강나연', birthYear: 1998, visitCount: 2, status: 'progress' },
+            ],
+            weeks: ['8/24', '8/31', '9/7', '9/14']
+        };
+
+        // 개인별 출석률 계산 및 렌더링
+        function renderMemberAttendance() {
+            const container = document.getElementById('memberAttendanceList');
+            const sortedMembers = attendanceData.members
+                .map(member => {
+                    const total = member.attendance.length;
+                    const attended = member.attendance.filter(a => a !== 'absent').length;
+                    const rate = (attended / total * 100).toFixed(0);
+                    return { ...member, rate, attended };
+                })
+                .sort((a, b) => b.rate - a.rate);
+
+            container.innerHTML = sortedMembers.map(member => `
+                <div class="member-item">
+                    <div>
+                        <span class="member-name">${member.name}</span>
+                        <span style="color: #999; font-size: 0.9em; margin-left: 8px;">(${member.group})</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="attendance-dots">
+                            ${member.attendance.map(status => `
+                                <span class="dot ${status}"></span>
+                            `).join('')}
+                        </div>
+                        <span class="rate">${member.rate}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 새신자 현황 렌더링
+        function renderNewcomers() {
+            const container = document.getElementById('newcomerList');
+            container.innerHTML = attendanceData.newcomers.map(newcomer => {
+                let badgeClass = 'new';
+                let badgeText = '신규';
+                
+                if (newcomer.visitCount >= 3) {
+                    badgeClass = 'ready';
+                    badgeText = '등록 가능';
+                } else if (newcomer.visitCount >= 2) {
+                    badgeClass = 'progress';
+                    badgeText = '진행 중';
+                }
+
+                return `
+                    <div class="newcomer-card">
+                        <div class="newcomer-header">
+                            <span class="newcomer-name">${newcomer.name}</span>
+                            <span class="badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="attendance-count">
+                            출석 횟수: <strong>${newcomer.visitCount}회</strong> / 3회
+                            <div style="background: #e0e0e0; height: 8px; border-radius: 10px; margin-top: 8px; overflow: hidden;">
+                                <div style="background: ${newcomer.visitCount >= 3 ? '#4CAF50' : '#FF9800'}; width: ${Math.min(newcomer.visitCount / 3 * 100, 100)}%; height: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 속별 평균 출석률
+        function renderGroupAttendance() {
+            const groups = {};
+            attendanceData.members.forEach(member => {
+                if (!groups[member.group]) {
+                    groups[member.group] = { total: 0, attended: 0 };
+                }
+                groups[member.group].total += member.attendance.length;
+                groups[member.group].attended += member.attendance.filter(a => a !== 'absent').length;
+            });
+
+            const groupNames = Object.keys(groups);
+            const groupRates = groupNames.map(name => 
+                (groups[name].attended / groups[name].total * 100).toFixed(1)
+            );
+
+            new Chart(document.getElementById('groupAttendanceChart'), {
+                type: 'bar',
+                data: {
+                    labels: groupNames,
+                    datasets: [{
+                        label: '출석률 (%)',
+                        data: groupRates,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 주차별 출석 추이
+        function renderWeeklyTrend() {
+            const weeklyData = attendanceData.weeks.map((week, index) => {
+                return attendanceData.members.filter(m => 
+                    m.attendance[index] && m.attendance[index] !== 'absent'
+                ).length;
+            });
+
+            new Chart(document.getElementById('weeklyTrendChart'), {
+                type: 'line',
+                data: {
+                    labels: attendanceData.weeks,
+                    datasets: [{
+                        label: '출석 인원',
+                        data: weeklyData,
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 5
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 연령대별 출석률
+        function renderAgeGroupAttendance() {
+            const ageGroups = {
+                '80년대': { total: 0, attended: 0 },
+                '90년대': { total: 0, attended: 0 },
+                '00년대': { total: 0, attended: 0 }
+            };
+
+            attendanceData.members.forEach(member => {
+                const decade = Math.floor(member.birthYear / 10) * 10;
+                let group;
+                if (decade === 1980) group = '80년대';
+                else if (decade === 1990) group = '90년대';
+                else group = '00년대';
+
+                ageGroups[group].total += member.attendance.length;
+                ageGroups[group].attended += member.attendance.filter(a => a !== 'absent').length;
+            });
+
+            const labels = Object.keys(ageGroups);
+            const rates = labels.map(label => 
+                (ageGroups[label].attended / ageGroups[label].total * 100).toFixed(1)
+            );
+
+            new Chart(document.getElementById('ageGroupChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: rates,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 출석 상태 분포
+        function renderAttendanceStatus() {
+            const statusCount = {
+                '정시 출석': 0,
+                '지각': 0,
+                '본당예배': 0,
+                '결석': 0
+            };
+
+            attendanceData.members.forEach(member => {
+                member.attendance.forEach(status => {
+                    if (status === 'present') statusCount['정시 출석']++;
+                    else if (status === 'late') statusCount['지각']++;
+                    else if (status === 'main') statusCount['본당예배']++;
+                    else statusCount['결석']++;
+                });
+            });
+
+            new Chart(document.getElementById('attendanceStatusChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(statusCount),
+                    datasets: [{
+                        data: Object.values(statusCount),
+                        backgroundColor: [
+                            'rgba(76, 175, 80, 0.8)',
+                            'rgba(255, 152, 0, 0.8)',
+                            'rgba(33, 150, 243, 0.8)',
+                            'rgba(158, 158, 158, 0.8)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 연속 결석자 현황
+        function renderAbsentMembers() {
+            const container = document.getElementById('absentMembersList');
+            const absentMembers = attendanceData.members
+                .map(member => {
+                    let consecutiveAbsent = 0;
+                    for (let i = member.attendance.length - 1; i >= 0; i--) {
+                        if (member.attendance[i] === 'absent') {
+                            consecutiveAbsent++;
+                        } else {
+                            break;
+                        }
+                    }
+                    return { ...member, consecutiveAbsent };
+                })
+                .filter(m => m.consecutiveAbsent >= 2)
+                .sort((a, b) => b.consecutiveAbsent - a.consecutiveAbsent);
+
+            if (absentMembers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #4CAF50; padding: 20px;">✅ 관심이 필요한 멤버가 없습니다!</p>';
+            } else {
+                container.innerHTML = absentMembers.map(member => `
+                    <div class="member-item" style="border-left: 4px solid #f44336;">
+                        <div>
+                            <span class="member-name">${member.name}</span>
+                            <span style="color: #999; font-size: 0.9em; margin-left: 8px;">(${member.group})</span>
+                        </div>
+                        <span style="color: #f44336; font-weight: 700;">${member.consecutiveAbsent}주 연속 결석</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 완전 출석자
+        function renderPerfectAttendance() {
+            const container = document.getElementById('perfectAttendanceList');
+            const perfectMembers = attendanceData.members
+                .filter(m => m.attendance.every(a => a !== 'absent'));
+
+            if (perfectMembers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">완전 출석자가 없습니다.</p>';
+            } else {
+                container.innerHTML = perfectMembers.map(member => `
+                    <div class="member-item" style="border-left: 4px solid #4CAF50;">
+                        <div>
+                            <span class="member-name">🏆 ${member.name}</span>
+                            <span style="color: #999; font-size: 0.9em; margin-left: 8px;">(${member.group})</span>
+                        </div>
+                        <span style="color: #4CAF50; font-weight: 700;">4주 출석</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 모든 통계 렌더링
+        renderMemberAttendance();
+        renderNewcomers();
+        renderGroupAttendance();
+        renderWeeklyTrend();
+        renderAgeGroupAttendance();
+        renderAttendanceStatus();
+        renderAbsentMembers();
+        renderPerfectAttendance();
+    </script>
+</body>
+</html>
